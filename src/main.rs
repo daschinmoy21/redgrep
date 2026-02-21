@@ -1,11 +1,11 @@
-use redgrep::search;
+use redgrep::{search, search_case_insensitive};
 use std::env;
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 fn main() {
     let args: Vec<String> = env::args().collect();
-    dbg!(&args);
+    // dbg!(&args);
 
     let config = Config::new(&args).unwrap_or_else(|err| {
         eprintln!("Problem parsing arguments: {}", err);
@@ -19,13 +19,16 @@ fn main() {
 }
 
 fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    println!("Searching for {}", config.query);
-    println!("In file {}", config.file_path.display());
-
     let contents =
         fs::read_to_string(&config.file_path).expect("Should have been able to read the file");
 
-    for line in search(&config.query, &contents) {
+    let results = if config.ignore_case {
+        search_case_insensitive(&config.query, &contents)
+    } else {
+        search(&config.query, &contents)
+    };
+
+    for line in results {
         println!("{line}")
     }
     Ok(())
@@ -34,6 +37,7 @@ fn run(config: Config) -> Result<(), Box<dyn Error>> {
 struct Config {
     query: String,
     file_path: PathBuf,
+    ignore_case: bool,
 }
 
 impl Config {
@@ -44,6 +48,12 @@ impl Config {
         let query = args[1].clone();
         let file_path = PathBuf::from(&args[2]);
 
-        Ok(Config { query, file_path })
+        let ignore_case = env::var("IGNORE_CASE").is_ok();
+
+        Ok(Config {
+            query,
+            file_path,
+            ignore_case,
+        })
     }
 }

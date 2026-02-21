@@ -1,3 +1,3 @@
 # REDGREP
 
-A small grep tool for rust practice
+redgrep-A small grep tool.built using rust.
